@@ -12,20 +12,18 @@ colors = pathengine.suPath2D.generate_RGB_list(100)
 '''
 test hausdorff distanse in  construct graph on iso-contours
 '''
-def test_segment_contours_in_region(filepath):
+def test_segment_contours_in_region(filepath, offset=-14, reversed=True):
     path2d = pathengine.suPath2D()
-      
-    offset = -14
-    line_width = 1 #int(abs(offset)/2)
+    
+    line_width = abs(offset)
     pe = pathengine.pathEngine()   
-    pe.generate_contours_from_img(filepath, True)
+    pe.generate_contours_from_img(filepath, reversed)
     pe.im = cv2.cvtColor(pe.im, cv2.COLOR_GRAY2BGR)
     contour_tree = pe.convert_hiearchy_to_PyPolyTree() 
     path2d.group_boundary = pe.get_contours_from_each_connected_region(contour_tree, '0')
 
-    color = (255,0,0)   
-   
-   
+    color = (0,0,255)   
+      
     ## Build a init graph from boundaries
     # distance threshold between two adjacent layers
     dist_th = abs(offset) * 1.2    
@@ -34,7 +32,7 @@ def test_segment_contours_in_region(filepath):
         msg = "Region {}: has {} boundry contours.".format(iB, len(boundary))
         print(msg)
        
-        iso_contours = pe.fill_closed_region_with_iso_contours(boundary, offset)       
+        iso_contours = pe.fill_closed_region_with_iso_contours(boundary, offset)    
        
         # init contour graph for each region
         num_contours = 0       
@@ -42,12 +40,11 @@ def test_segment_contours_in_region(filepath):
         for i in range(len(iso_contours)):
             for j in range(len(iso_contours[i])):
                 # resample and convert to np.array
-                iso_contours[i][j] = pe.path2d.resample_curve_by_equal_dist(iso_contours[i][j], abs(offset/2))            
+                iso_contours[i][j] = pe.path2d.resample_curve_by_equal_dist(iso_contours[i][j], abs(offset/2))
                 iso_contours_2D.append(iso_contours[i][j])
                 num_contours += 1         
         # @R is the relationship matrix
-        R = np.zeros((num_contours, num_contours)).astype(int)    
-       
+        R = np.zeros((num_contours, num_contours)).astype(int)           
 
         # @input: iso_contours c_{i,j}
         i = 0
@@ -56,7 +53,7 @@ def test_segment_contours_in_region(filepath):
             for c1 in cs:               
                 c1_id = path2d.get_contour_id(i, j1, iso_contours)
                
-                pathengine.suPath2D.draw_line(np.vstack([c1,c1[0]]), pe.im, color, 1, 2) 
+                pathengine.suPath2D.draw_line(np.vstack([c1,c1[0]]), pe.im, color, line_width, 2) 
                 pathengine.suPath2D.draw_text(str(c1_id + 1), c1[0], pe.im, (0,0,255))
                 j2 = 0
                 for c2 in iso_contours[i+1]:
@@ -70,7 +67,7 @@ def test_segment_contours_in_region(filepath):
                         gId = np.argmin(dist)
                         pid_c1 = int(gId / dist.shape[1])
                         pid_c2 = gId - dist.shape[1] * pid_c1
-                        pathengine.suPath2D.draw_line(np.asarray([c1[pid_c1], c2[pid_c2]]), pe.im, (0,0,255), 1,0)
+                        pathengine.suPath2D.draw_line(np.asarray([c1[pid_c1], c2[pid_c2]]), pe.im, (0,0,255), line_width,0)
                        
                     j2 += 1
                 j1 += 1
@@ -81,12 +78,13 @@ def test_segment_contours_in_region(filepath):
         pockets = graph.classify_nodes_by_type(R)
         
         N = len(pockets)
+        print("There are {} pockets.".format(N))
         colors = path2d.generate_RGB_list(N)        
         p_id = 0       
         for p in pockets:
-            print(np.array(p) + 1)
-            for idx in p:
-                pathengine.suPath2D.draw_line(np.vstack([iso_contours_2D[idx],iso_contours_2D[idx][0]]), pe.im, colors[p_id], 2, 4) 
+            # print(np.array(p) + 1)
+            # for idx in p:
+                # pathengine.suPath2D.draw_line(np.vstack([iso_contours_2D[idx],iso_contours_2D[idx][0]]), pe.im, colors[p_id], line_width*2, 4) 
             p_id += 1            
         
         
@@ -101,8 +99,8 @@ def test_segment_contours_in_region(filepath):
     gray = cv2.cvtColor(pe.im, cv2.COLOR_BGR2GRAY)
     #ret, mask = cv2.threshold(gray, 1, 255,cv2.THRESH_BINARY)
     pe.im[np.where((pe.im==[0,0,0]).all(axis=2))] = [255,255,255]
-    cv2.imwrite("d:/tmp.png", pe.im)
-    cv2.imshow("Art", pe.im)
+    resizeImg = cv2.resize(pe.im, (1000,1000))
+    cv2.imshow("Art", resizeImg)
     cv2.waitKey(0)    
 
 
@@ -198,9 +196,9 @@ def test_pocket_spiral(filepath, offset = -14, reverseImage = True):
                 if pockets[p_id][0] == 37:
                     color = [255,0,0]
             path2d.draw_line(spirals[p_id], pe.im, color,1)
-            
-        ns = pe.connect_two_pockets(spirals[0],spirals[1], abs(offset))         
-        path2d.draw_line(ns, pe.im, [0,255,0],2)
+        if len(pockets) > 2:
+            ns = pe.connect_two_pockets(spirals[0],spirals[1], abs(offset))                     
+            path2d.draw_line(ns, pe.im, [0,255,0],2)
         
         
         graph.to_Mathematica("")
@@ -215,7 +213,6 @@ def test_pocket_spiral(filepath, offset = -14, reverseImage = True):
     gray = cv2.cvtColor(pe.im, cv2.COLOR_BGR2GRAY)
     pe.im[np.where((pe.im==[0,0,0]).all(axis=2))] = [255,255,255]
     cv2.imshow("Art", pe.im)
-    cv2.imwrite("r:/tmp.png", pe.im)
     cv2.waitKey(0)          
 
 
@@ -379,22 +376,23 @@ def test_filling_with_continues_spiral(filepath, offset = -14, reverseImage = Tr
         
  
         #spiral id
-        #for i in range(len(spirals)):
+        # for i in range(len(spirals)):
             #pathengine.suPath2D.draw_text(str(i + 1), spirals[i][0], pe.im)     
         
-        kappa, smooth = css.compute_curve_css(spirals[22], 2)  
-        css_idx = css.find_css_point(kappa)
-        for i in css_idx:
-            cv2.circle(pe.im, tuple(spirals[22][i].astype(int)), 2, (255,255,0), -1)  
-        
-        id_sp = 0
-        kappa, smooth = css.compute_curve_css(spirals[id_sp], 4)  
-        css_idx = css.find_css_point(kappa)
-        for i in css_idx:
-            cv2.circle(pe.im, tuple(spirals[id_sp][i].astype(int)), 2, (255,255,0), -1)         
-                                
-        
-        pathengine.suPath2D.draw_line(spirals[22], pe.im, [0,0,255] ,1)   
+        if len(spirals) > 21:
+            kappa, smooth = css.compute_curve_css(spirals[22], 2)  
+            css_idx = css.find_css_point(kappa)
+            for i in css_idx:
+                cv2.circle(pe.im, tuple(spirals[22][i].astype(int)), 2, (255,255,0), -1)  
+            
+            id_sp = 0
+            kappa, smooth = css.compute_curve_css(spirals[id_sp], 4)  
+            css_idx = css.find_css_point(kappa)
+            for i in css_idx:
+                cv2.circle(pe.im, tuple(spirals[id_sp][i].astype(int)), 2, (255,255,0), -1)         
+                                    
+            
+            pathengine.suPath2D.draw_line(spirals[22], pe.im, [0,0,255] ,1)   
         #pathengine.suPath2D.draw_line(iso_contours_2D[36], pe.im, [0,0,255] ,1) 
        
     
@@ -421,13 +419,14 @@ def test_filling_with_continues_spiral(filepath, offset = -14, reverseImage = Tr
         
     gray = cv2.cvtColor(pe.im, cv2.COLOR_BGR2GRAY)
     pe.im[np.where((pe.im==[0,0,0]).all(axis=2))] = [255,255,255]
-    cv2.imwrite("d:/tmp.png", pe.im)
     cv2.imshow("Art", pe.im)
 
     cv2.waitKey(0)  
     
 def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
-    pe = pathengine.pathEngine()   
+    pe = pathengine.pathEngine()
+
+    line_width = 1#abs(offset) 
     
     def fill_spiral_in_connected_region(boundary):
         print("Region {}: has {} boundry contours.".format(iB, len(boundary)) )
@@ -464,63 +463,63 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
 
     pe.im = cv2.cvtColor(pe.im, cv2.COLOR_GRAY2BGR)
     #2.filling each connected region   
-    dist_th = abs(offset) * 1.1 # contour distance threshold between adjacent layers
     iB = 0
     for boundary in group_boundary.values():
+        if (len(boundary) <= 2):
+            continue
         spiral = fill_spiral_in_connected_region(boundary)
-        #print("Region {}: has {} boundry contours.".format(iB, len(boundary)) )
-        #iso_contours = pe.fill_closed_region_with_iso_contours(boundary, offset)
+        pathengine.suPath2D.draw_line(spiral, pe.im, [100,255,100],line_width)
+        # start & end point 
+        cv2.circle(pe.im, tuple(spiral[-1].astype(int)), abs(offset), (255,0,0), -1)
+        cv2.circle(pe.im, tuple(spiral[0].astype(int)), abs(offset), (0,0,255), -1)
 
-        ## init contour graph for iso contour by a distance relationaship matrix  
-        #iso_contours_2D, graph = pe.init_isocontour_graph(iso_contours)     
-        #graph.to_Mathematica("")
+        # print("Region {}: has {} boundry contours.".format(iB, len(boundary)) )
+        # iso_contours = pe.fill_closed_region_with_iso_contours(boundary, offset)
 
-        #if not graph.is_connected():
-            #print("not connected")
-            #ret = pe.reconnect_from_leaf_node(graph, iso_contours, abs(offset * 1.2))
-            #if(ret):
-                #print("re-connect...")
-                #graph.to_Mathematica("")
+        # # init contour graph for iso contour by a distance relationaship matrix  
+        # iso_contours_2D, graph = pe.init_isocontour_graph(iso_contours)     
+        # graph.to_Mathematica("")
 
-        ## generate a minimum-weight spanning tree
-        #graph.to_reverse_delete_MST()
-        #graph.to_Mathematica("")
-        ## generate a minimum-weight spanning tree
-        #pocket_graph = graph.gen_pockets_graph()
-        #pocket_graph.to_Mathematica("")
-        ## generate spiral for each pockets
-        ## deep first search
-        #spirals = {}
-        #pe.dfs_connect_path_from_bottom(0, pocket_graph.nodes, iso_contours_2D, spirals, offset)       
+        # if not graph.is_connected():
+        #     print("not connected")
+        #     ret = pe.reconnect_from_leaf_node(graph, iso_contours, abs(offset * 1.2))
+        #     if(ret):
+        #         print("re-connect...")
+        #         graph.to_Mathematica("")
 
+        # # generate a minimum-weight spanning tree
+        # graph.to_reverse_delete_MST()
+        # graph.to_Mathematica("")
+        # # generate a minimum-weight spanning tree
+        # pocket_graph = graph.gen_pockets_graph()
+        # pocket_graph.to_Mathematica("")
+        # # generate spiral for each pockets
+        # # deep first search
+        # spirals = {}
+        # pe.dfs_connect_path_from_bottom(0, pocket_graph.nodes, iso_contours_2D, spirals, offset)       
+
+        # spirals[0] = pe.smooth_curve_by_savgol(spirals[0], 3, 1)
+        # pathengine.suPath2D.draw_line(spirals[0], pe.im, [100,255,100],line_width)
+
+        # id_sp = 0
+        # kappa, smooth = css.compute_curve_css(spirals[id_sp], 4)  
+        # css_idx = css.find_css_point(kappa)
+        # for i in css_idx:
+        #     cv2.circle(pe.im, tuple(spirals[id_sp][i].astype(int)), 2, (255,255,0), -1)       
+        # iB += 1 
+        
         ##test
-        #for l in iso_contours_2D:
+        # for l in iso_contours_2D:
+        #     pathengine.suPath2D.draw_line(l, pe.im, [0,0,255],line_width)
+        ##test                                
 
-            #pathengine.suPath2D.draw_line(l, pe.im, [0,0,255],1)
-        ##test
-
-        #spirals[0] = pe.smooth_curve_by_savgol(spirals[0], 3, 1)
-        pathengine.suPath2D.draw_line(spiral, pe.im, [100,255,100],1)                      
-
-        #id_sp = 0
-        #kappa, smooth = css.compute_curve_css(spirals[id_sp], 4)  
-        #css_idx = css.find_css_point(kappa)
-        #for i in css_idx:
-            #cv2.circle(pe.im, tuple(spirals[id_sp][i].astype(int)), 2, (255,255,0), -1)                                       
-
-        iB += 1     
-
-    cv2.imshow("Art", pe.im)
+    # resizeImg = cv2.resize(pe.im, (1000,1000))
+    # cv2.imshow("Art", resizeImg)
+    cv2.imshow("Result", pe.im)
     cv2.waitKey(0)   
     
 if __name__ == '__main__':  
-    #test_segment_contours_in_region("/home/SENSETIME/wangjintao1/Desktop/a.png")
-    test_pocket_spiral("/home/SENSETIME/wangjintao1/Desktop/a.png")
-    #test_pocket_spiral("E:/git/mydoc/Code/python/gen_path/data/two-circle.png", -10, False)
-    
-    #test_pocket_spiral("E:/git/mydoc/Code/python/gen_path/data/sample.png", -14, False)
-    #test_pocket_spiral("/home/SENSETIME/wangjintao1/Desktop/a.png")
-    #test_filling_with_continues_spiral("E:/git/mydoc/Code/python/gen_path/data/gear.png", -6, False)
-    #test_filling_with_continues_spiral("E:/git/suCAM/python/images/slice.png", -7)
-    #test_fill_from_CSS("e:/git/mydoc/Code/python/gen_path/data/two-circle.png", -7, False)
-    test_fill_from_CSS("/home/SENSETIME/wangjintao1/Desktop/aa.png", -20, True) 
+    # test_segment_contours_in_region("/home/w/Desktop/pre_pro_1.png", -20, True)
+    # test_pocket_spiral("/home/w/Desktop/pre_pro_1.png", -20, True)
+    # test_filling_with_continues_spiral("/home/w/Desktop/pre_pro_1.png", -30, True)
+    test_fill_from_CSS("/home/w/Desktop/pre_pro.png", -10, True)

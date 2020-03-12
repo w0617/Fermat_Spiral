@@ -317,11 +317,21 @@ class pathEngine:
         if isRevertImage:
             im = 255 - im
 
-        # close operator just for grid map of the park
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-        im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel, iterations=5)  
-        cv2.imshow("open", im)
-        cv2.waitKey(0)
+        # open & close operator just for grid map of the park
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
+        
+        # im = cv2.morphologyEx(im, cv2.MORPH_DILATE, kernel, iterations=2)
+        # shrink = cv2.resize(im, (1024,1024), interpolation=cv2.INTER_AREA)
+        # cv2.imshow("dilate", shrink)
+        # im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, kernel, iterations=10)
+        # shrink = cv2.resize(im, (1024,1024), interpolation=cv2.INTER_AREA)
+        # cv2.imshow("close", shrink)
+        # im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel, iterations=2)
+        # shrink = cv2.resize(im, (1024,1024), interpolation=cv2.INTER_AREA)
+        # cv2.imshow("pre-processing", shrink)
+        # cv2.imwrite("/home/w/Desktop/pre_pro.png", 255 - im)
+        
+        # cv2.waitKey(0)
 
         ret, thresh = cv2.threshold(im, 127, 255, 1)      
          
@@ -509,6 +519,7 @@ class pathEngine:
         iso_contours_of_a_region = []
         contours = input_contours
         iso_contours_of_a_region.append(input_contours)
+        # ???
         while(len(contours) != 0):
             pco = pyclipper.PyclipperOffset()
             pco.AddPaths(contours, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
@@ -809,7 +820,7 @@ class pathEngine:
             # different orientaton: 
             if (pid_c2_near_return == pid_c2):
                 #print("-------------------------------------------")
-                cv2.circle(self.im, tuple(fc2[idx_end].astype(int)), 2, (0,0,255)) 
+                # cv2.circle(self.im, tuple(fc2[idx_end].astype(int)), 2, (0,0,255)) 
                 pid_c2_near_return = self.find_point_index_by_distance(pid_c2_near_return, fc2, offset, 1)            
             while idx != pid_c2_near_return:  
                 fc.append(fc2[idx])

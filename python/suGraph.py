@@ -117,7 +117,7 @@ class suGraph():
         edges = nex + pre
         for j in edges:
             if self.visited[j] == 0:
-                self.dfs_visit(j);
+                self.dfs_visit(j)
         return
     def is_connected(self):
         self.visited = []        
@@ -257,7 +257,8 @@ class suGraph():
         sData = re.sub("\s+", ", ", sData)
         
         if(len(filepath) == 0):
-            print(script.replace('DATA', sData))
+            # print(script.replace('DATA', sData))
+            return
         else:
             file = open(filepath,'w')
             file.write(script.replace('DATA', sData))
