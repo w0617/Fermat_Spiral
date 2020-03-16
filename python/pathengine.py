@@ -648,8 +648,8 @@ class pathEngine:
         num_contours = 0       
         iso_contours_2D = []
         # contour distance threshold between adjacent layers
-        dist_th = abs(self.offset) * 1.2  
-        inter_size = abs(self.offset)/6
+        # dist_th = abs(self.offset) * 2  
+        inter_size = abs(self.offset) / 6
         if inter_size < 4:
             inter_size = 4
 
@@ -659,22 +659,26 @@ class pathEngine:
                 iso_contours[i][j] = suPath2D.resample_curve_by_equal_dist(iso_contours[i][j], inter_size) 
                 iso_contours_2D.append(iso_contours[i][j])               
                 num_contours += 1       
+        print("num of contours: ", num_contours)
+        
         suPath2D.convto_cw(iso_contours_2D)
         # @R is the relationship matrix
         R = np.zeros((num_contours, num_contours)).astype(int)    
         i = 0
-        for cs in iso_contours[:-1]:     # for each group contour[i], where i*offset reprents the distance from boundaries      
+        for cs in iso_contours[:-1]:     
+            # for each group contour[i], where i*offset reprents the distance from boundaries      
             j1 = 0           
             for c1 in cs:               
                 c1_id = suPath2D.get_contour_id(i, j1, iso_contours)  
 
                 j2 = 0
                 for c2 in iso_contours[i+1]:
-                    dist = scid.cdist(c1, c2, 'euclidean')
-                    min_dist = np.min(dist)
-                    if(min_dist < dist_th):
-                        c2_id = suPath2D.get_contour_id(i+1, j2, iso_contours)
-                        R[c1_id][c2_id] = 1
+                    c2_id = suPath2D.get_contour_id(i+1, j2, iso_contours)
+                    if (R[c1_id][c2_id] != 1):
+                        dist = scid.cdist(c1, c2, 'euclidean')
+                        min_dist = np.min(dist)
+                        if(min_dist < (i+1.5)*abs(self.offset)):
+                            R[c1_id][c2_id] = 1
 
                     j2 += 1
                 j1 += 1
@@ -698,7 +702,7 @@ class pathEngine:
         for l in layer: # check from leaf nodes
             cs = iso_contours[l]
             D, i, j = suPath2D.find_distance_matrix(cs)
-            if(D[i,j] < dist_thresh):
+            if(D[i,j] < (l+1.5)*abs(dist_thresh)):
                 global_ind_i = suPath2D.get_contour_id(l, i, iso_contours)
                 global_ind_j = suPath2D.get_contour_id(l, j, iso_contours)
                 graph.nodes[global_ind_i].next.append(global_ind_j)
@@ -859,30 +863,28 @@ class pathEngine:
         cs = []
         for ii in node.data:
             cs.append(iso_contours_2D[ii])
-        spirals[i] = self.build_spiral_for_pocket(cs, True) 
-
-
-        # suPath2D.draw_line(spirals[i], self.im, [255,255,0],1)
-        # cv2.imshow("spiral", self.im)
-        # cv2.waitKey(0)
-
+        spirals[i] = self.build_spiral_for_pocket(cs, False) 
 
         if(len(node.next) > 0): 
             for ic in node.next:
                 self.dfs_connect_path_from_bottom(ic, nodes, iso_contours_2D, spirals, offset)                    
 
                 if (len(spirals[ic]) / len(spirals[i]) > 2):
-                    spirals[i] = self.test_connect_two_pockets(spirals[ic],spirals[i], abs(offset))
+                    spirals[i] = self.connect_two_pockets(spirals[ic],spirals[i], abs(offset))
                     msg = '{} insert {}'.format(ic+1, i+1)
                     print(msg)                        
                 else:
                     if (len(spirals[ic])) > 0:
-                        spirals[i] = self.test_connect_two_pockets(spirals[i],spirals[ic], abs(offset))
+                        spirals[i] = self.connect_two_pockets(spirals[i],spirals[ic], abs(offset))
                         msg = '{} insert {}'.format(i+1, ic+1)
                         print(msg)
-
         else :
-            print("{} node.next is empty!".format(i))    
+            print("{} node.next is empty!".format(i)) 
+            # im = self.im.copy()
+            # suPath2D.draw_line(iso_contours_2D[i], im, [255,255,255],3)
+            # im = cv2.resize(im, (1000,1000))
+            # cv2.imshow("spiral", im)
+            # cv2.waitKey(0)
             
 
         return      
@@ -895,7 +897,7 @@ class pathEngine:
 
         if not graph.is_connected():
             print("not connected")
-            ret = self.reconnect_from_leaf_node(graph, iso_contours, abs(offset * 1.2))
+            ret = self.reconnect_from_leaf_node(graph, iso_contours, abs(offset * 2))
             if(ret):
                 print("re-connect...")
                 graph.to_Mathematica("")
@@ -963,7 +965,7 @@ class pathEngine:
     def build_spiral_for_pocket(self, iso_contours, use_PCA = False):
         """
         Split contours into two groups(by odd/even), connect each then join these two spirals.
-        @iso_contours: input iso contours of a pocket  
+        @iso_contours: input iso contours of a pocket
         return a spiral path
         """
         if (len(iso_contours) == 1):
@@ -982,7 +984,7 @@ class pathEngine:
             ratio, entrance_id = pathEngine.check_pocket_ratio_by_pca(in_contour_groups, self.offset)        
             if (ratio < 0.8):
                 start_id = entrance_id
-        #cv2.circle(self.im, tuple(in_contour_groups[0][start_id].astype(int)), 5, (0,0,255)) 
+        # cv2.circle(self.im, tuple(in_contour_groups[0][start_id].astype(int)), 20, (0,0,255), -1) 
         
         cc_in = self.contour2spiral(in_contour_groups,start_id, self.offset )
         output_index = self.find_nearest_point_idx(in_contour_groups[0][start_id], out_contour_groups[0]) 

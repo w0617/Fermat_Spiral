@@ -426,7 +426,7 @@ def test_filling_with_continues_spiral(filepath, offset = -14, reverseImage = Tr
 def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
     pe = pathengine.pathEngine()
 
-    line_width = 1 #abs(offset) 
+    line_width = 2 #abs(offset) 
     
     def fill_spiral_in_connected_region(boundary):
         print("Region {}: has {} boundry contours.".format(iB, len(boundary)) )
@@ -440,14 +440,15 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
         im = pe.im
         for ic_1 in iso_contours_2D:
             contour = np.array(ic_1)
-            pathengine.suPath2D.draw_line(contour, im, [0,0,255],2)
-        cv2.imshow("iso_contours_2d", im)
-        cv2.waitKey(0)
+            pathengine.suPath2D.draw_line(contour, im, [255,0,0],1)
+        # cv2.imshow("iso_contours_2d", im)
+        # cv2.waitKey(0)
 
         if not graph.is_connected():
+            deta = 0
             print("not connected")
-            ret = pe.reconnect_from_leaf_node(graph, iso_contours, abs(offset * 1.2))
-            if(ret):
+            ret = pe.reconnect_from_leaf_node(graph, iso_contours, abs(offset*2))
+            if ret:
                 print("re-connect...")
                 graph.to_Mathematica("")
 
@@ -539,13 +540,13 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
         #     pathengine.suPath2D.draw_line(l, pe.im, [0,0,255],line_width)
         ##test                                
 
-    # resizeImg = cv2.resize(pe.im, (1000,1000))
-    # cv2.imshow("Art", resizeImg)
-    cv2.imshow("Result", pe.im)
+    resizeImg = cv2.resize(pe.im, (1000,1000))
+    cv2.imshow("Art", resizeImg)
+    # cv2.imshow("Result", pe.im)
     cv2.waitKey(0)   
     
 if __name__ == '__main__':  
     # test_segment_contours_in_region("../pre_pro.png", -20, True)
     # test_pocket_spiral("../pre_pro.png", -20, True)
     # test_filling_with_continues_spiral("../pre_pro.png", -30, True)
-    test_fill_from_CSS("../pre_pro.png", -25, True)
+    test_fill_from_CSS("../pre_pro.png", -20, True)

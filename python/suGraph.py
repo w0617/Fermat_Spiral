@@ -115,7 +115,8 @@ class suGraph():
         ids = np.argwhere(self.matrix.T[i] == 1)
         pre = list(ids.reshape(len(ids)) )
         edges = nex + pre
-        for j in edges:
+        ##################
+        for j in nex:
             if self.visited[j] == 0:
                 self.dfs_visit(j)
         return
@@ -156,9 +157,13 @@ class suGraph():
                     if(not self.is_connected()):
                         #print("Not connected")
                         self.matrix[idx][i] = 1
-            else:
-                if(len(self.nodes[i].pre + self.nodes[i].next) > 2):
-                    nodes_type[i] = 2
+            elif len(self.nodes[i].next) > 1:
+                nodes_type[i] = 2
+                for idx in pre:
+                    self.matrix[idx][i] = 0
+                    if(not self.is_connected()):
+                        self.matrix[idx][i] = 1
+
         #some information, like node type, is lost in this procedure
         self.init_from_matrix(self.matrix)      
         #so we need to rebuild the type info
