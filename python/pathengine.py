@@ -859,7 +859,7 @@ class pathEngine:
         cs = []
         for ii in node.data:
             cs.append(iso_contours_2D[ii])
-        spirals[i] = self.build_spiral_for_pocket(cs, False) 
+        spirals[i] = self.build_spiral_for_pocket(cs, True) 
 
 
         # suPath2D.draw_line(spirals[i], self.im, [255,255,0],1)
@@ -993,7 +993,7 @@ class pathEngine:
         cc_out = self.contour2spiral(out_contour_groups, output_index, self.offset )
     
         ## connect two spiral
-        fspiral = self.connect_spiral(cc_in, cc_out)
+        fspiral = self.connect_spiral(cc_in, cc_out, False)
         ## set out point
         out_point_index = self.find_point_index_by_distance(start_id, in_contour_groups[0], self.offset/2)
         fspiral.append(in_contour_groups[0][out_point_index])     
@@ -1090,7 +1090,7 @@ def test_fill_with_iso_contour(filepath, reverseImage = True):
 
   
 if __name__ == '__main__':   
-    test_tree_visit("/home/w/Desktop/aaa.png")
-    test_region_contour("/home/w/Desktop/aaa.png")
-    test_fill_with_iso_contour("/home/w/Desktop/aaa.png")
+    test_tree_visit("../pre_pro.png")
+    test_region_contour("../pre_pro.png")
+    test_fill_with_iso_contour("../pre_pro.png")
     

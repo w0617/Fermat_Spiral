@@ -15,7 +15,7 @@ test hausdorff distanse in  construct graph on iso-contours
 def test_segment_contours_in_region(filepath, offset=-14, reversed=True):
     path2d = pathengine.suPath2D()
     
-    line_width = abs(offset)
+    line_width = 1#abs(offset)
     pe = pathengine.pathEngine()   
     pe.generate_contours_from_img(filepath, reversed)
     pe.im = cv2.cvtColor(pe.im, cv2.COLOR_GRAY2BGR)
@@ -545,7 +545,7 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
     cv2.waitKey(0)   
     
 if __name__ == '__main__':  
-    # test_segment_contours_in_region("/home/w/Desktop/pre_pro_1.png", -20, True)
-    # test_pocket_spiral("/home/w/Desktop/pre_pro_1.png", -20, True)
-    # test_filling_with_continues_spiral("/home/w/Desktop/pre_pro_1.png", -30, True)
-    test_fill_from_CSS("../pre_pro.png", -20, True)
+    # test_segment_contours_in_region("../pre_pro.png", -20, True)
+    # test_pocket_spiral("../pre_pro.png", -20, True)
+    # test_filling_with_continues_spiral("../pre_pro.png", -30, True)
+    test_fill_from_CSS("../pre_pro.png", -25, True)
