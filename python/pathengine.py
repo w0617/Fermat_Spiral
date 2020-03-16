@@ -522,7 +522,7 @@ class pathEngine:
         self.offset = offset
         iso_contours_of_a_region = []
         contours = input_contours
-        iso_contours_of_a_region.append(input_contours)
+        # iso_contours_of_a_region.append(input_contours)
         first_contour = True
 
         # clipper for calculate iso contours

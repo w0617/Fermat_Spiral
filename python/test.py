@@ -438,7 +438,7 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
 
         # draw iso contours for test
         im = pe.im
-        for ic_1 in iso_contours_2D[:-1]:
+        for ic_1 in iso_contours_2D:
             contour = np.array(ic_1)
             pathengine.suPath2D.draw_line(contour, im, [0,0,255],2)
         cv2.imshow("iso_contours_2d", im)
@@ -491,6 +491,14 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
         cv2.circle(pe.im, tuple(spiral[-1].astype(int)), abs(offset), (255,0,0), -1)
         cv2.circle(pe.im, tuple(spiral[0].astype(int)), abs(offset), (0,0,255), -1)
 
+        # test boundary
+        # print(len(boundary))
+        # im_color = pe.im.copy()
+        # im_color = cv2.drawContours(im_color, boundary, -1, (0,255,0), 10)
+        # im_color = cv2.resize(im_color, (1000,1000))
+        # cv2.imshow("contours", im_color)
+        # cv2.waitKey(0)
+
         # print("Region {}: has {} boundry contours.".format(iB, len(boundary)) )
         # iso_contours = pe.fill_closed_region_with_iso_contours(boundary, offset)
 
@@ -540,4 +548,4 @@ if __name__ == '__main__':
     # test_segment_contours_in_region("/home/w/Desktop/pre_pro_1.png", -20, True)
     # test_pocket_spiral("/home/w/Desktop/pre_pro_1.png", -20, True)
     # test_filling_with_continues_spiral("/home/w/Desktop/pre_pro_1.png", -30, True)
-    test_fill_from_CSS("/home/w/Desktop/pre_pro.png", -20, True)
+    test_fill_from_CSS("../pre_pro.png", -20, True)
