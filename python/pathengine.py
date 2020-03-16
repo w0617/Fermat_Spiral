@@ -214,7 +214,7 @@ class suPath2D:
         @windows_size is \alpha of CSS
         """
         id1 = id2 = -1
-        kappa, smooth = css.compute_curve_css(c1, 4)  
+        kappa, smooth = css.compute_curve_css(c1, window_size)  
         css_idx = css.find_css_point(kappa)   
         c = []
         for i in css_idx:
@@ -333,7 +333,11 @@ class pathEngine:
         
         # cv2.waitKey(0)
 
-        ret, thresh = cv2.threshold(im, 127, 255, 1)      
+
+        # add source point
+        cv2.circle(im, (200,200), 1, (255,255,255), -1)
+
+        ret, thresh = cv2.threshold(im, 127, 255, 1)        
          
         if major == '3':
             self.im, self.contours, self.hiearchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -519,8 +523,16 @@ class pathEngine:
         iso_contours_of_a_region = []
         contours = input_contours
         iso_contours_of_a_region.append(input_contours)
-        # ???
+        first_contour = True
+
+        # clipper for calculate iso contours
         while(len(contours) != 0):
+            if first_contour:
+                offset = self.offset / 2
+                first_contour = False
+            else:
+                offset = self.offset
+
             pco = pyclipper.PyclipperOffset()
             pco.AddPaths(contours, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
             contours = pco.Execute(offset)           
@@ -704,8 +716,8 @@ class pathEngine:
            fc1:    pid_c1(closest)         goning forward with distance offset (from start)
            fc2:    pid_c2(closest)         going forward and contrary to the dir of fc1, end near the start of fc1 
         """        
-        pid_c1, pid_c2, min_d = suPath2D.find_nearest_point_for_css(fc1, fc2, offset)
-        if(min_d > abs(offset) * 1.1):
+        pid_c1, pid_c2, min_d = suPath2D.find_nearest_point_for_css(fc1, fc2, offset, 4)
+        if(min_d >= abs(offset)):
             pid_c1, pid_c2, min_d = suPath2D.find_closest_point_pair(fc1,fc2)
         
         
@@ -737,15 +749,15 @@ class pathEngine:
                 #idx_end = suPath2D.next_idx(idx_end, fc2)
         
         #test
-        #cv2.circle(self.im, tuple(fc1[pid_c1].astype(int)), 2, (0,0,255))          
-        #cv2.circle(self.im, tuple(fc2[pid_c2_near_return].astype(int)), 2, (255,0,0)) 
+        # cv2.circle(self.im, tuple(fc1[pid_c1].astype(int)), 5, (0,0,255))          
+        # cv2.circle(self.im, tuple(fc2[pid_c2_near_return].astype(int)), 5, (255,255,0)) 
         
         idx = pid_c2
         if angle > 90:
             # different orientaton: 
             if (pid_c2_near_return == pid_c2):
                 #print("-------------------------------------------")
-                #cv2.circle(self.im, tuple(fc2[idx_end].astype(int)), 2, (0,0,255)) 
+                # cv2.circle(self.im, tuple(fc2[idx_end].astype(int)), 2, (0,0,255)) 
                 pid_c2_near_return = self.find_point_index_by_distance(pid_c2_near_return, fc2, offset, 1)            
             while idx != pid_c2_near_return:  
                 fc.append(fc2[idx])
@@ -841,32 +853,39 @@ class pathEngine:
             
         return np.asarray(fc)  
     def dfs_connect_path_from_bottom(self, i, nodes, iso_contours_2D, spirals, offset):
-            node = nodes[i]  
-            msg = '{} make spiral {}'.format(i+1, np.asarray(node.data) + 1)
-            print(msg)  
-            cs = []
-            for ii in node.data:
-                cs.append(iso_contours_2D[ii])
-            spirals[i] = self.build_spiral_for_pocket(cs, False) 
-    
-            #if(i ==7):
-            #    suPath2D.draw_line(spirals[i], self.im, [255,255,0],1)
-            if(len(node.next) > 0): 
-                for ic in node.next:
-                    self.dfs_connect_path_from_bottom(ic, nodes, iso_contours_2D, spirals, offset)                    
-    
-                    if (len(spirals[ic]) / len(spirals[i]) > 2):
-                        spirals[i] = self.connect_two_pockets(spirals[ic],spirals[i], abs(offset))
-                        msg = '{} insert {}'.format(ic+1, i+1)
-                        print(msg)                        
-                    else:
-                        if (len(spirals[ic])) > 0:
-                            spirals[i] = self.connect_two_pockets(spirals[i],spirals[ic], abs(offset))
-                            msg = '{} insert {}'.format(i+1, ic+1)
-                            print(msg)                        
-    
-    
-            return      
+        node = nodes[i]  
+        msg = '{} make spiral {}'.format(i+1, np.asarray(node.data) + 1)
+        print(msg)  
+        cs = []
+        for ii in node.data:
+            cs.append(iso_contours_2D[ii])
+        spirals[i] = self.build_spiral_for_pocket(cs, False) 
+
+
+        # suPath2D.draw_line(spirals[i], self.im, [255,255,0],1)
+        # cv2.imshow("spiral", self.im)
+        # cv2.waitKey(0)
+
+
+        if(len(node.next) > 0): 
+            for ic in node.next:
+                self.dfs_connect_path_from_bottom(ic, nodes, iso_contours_2D, spirals, offset)                    
+
+                if (len(spirals[ic]) / len(spirals[i]) > 2):
+                    spirals[i] = self.test_connect_two_pockets(spirals[ic],spirals[i], abs(offset))
+                    msg = '{} insert {}'.format(ic+1, i+1)
+                    print(msg)                        
+                else:
+                    if (len(spirals[ic])) > 0:
+                        spirals[i] = self.test_connect_two_pockets(spirals[i],spirals[ic], abs(offset))
+                        msg = '{} insert {}'.format(i+1, ic+1)
+                        print(msg)
+
+        else :
+            print("{} node.next is empty!".format(i))    
+            
+
+        return      
     def fill_spiral_in_connected_region(self, boundary, offset):
         
         iso_contours = self.fill_closed_region_with_iso_contours(boundary, offset)
@@ -999,7 +1018,7 @@ def test_tree_visit(filepath):
         contour = node.Contour
         if len(contour) == 0:
             return       
-        draw_line(np.vstack([contour, contour[0]]), pe.im, (0,255,0),2)       
+        suPath2D.draw_line(np.vstack([contour, contour[0]]), pe.im, (0,255,0),2)       
         return
     pe.traversing_PyPolyTree(contour_tree, func)  
     cv2.imshow("Art", pe.im)
@@ -1026,7 +1045,7 @@ def test_region_contour(filepath):
     idx = 0
     for cs in group_contour.values():
         for c in cs:
-            draw_line(np.vstack([c, c[0]]), pe.im, colors[idx],2)
+            suPath2D.draw_line(np.vstack([c, c[0]]), pe.im, colors[idx],2)
         idx += 1
     cv2.imshow("Art", pe.im)
     cv2.waitKey(0)         
@@ -1065,16 +1084,13 @@ def test_fill_with_iso_contour(filepath, reverseImage = True):
     gray = cv2.cvtColor(pe.im, cv2.COLOR_BGR2GRAY)
     ret, mask = cv2.threshold(gray, 0, 255,cv2.THRESH_BINARY_INV |cv2.THRESH_OTSU)
     cv2.imshow("mask", mask)
-    cv2.imwrite("r:/tmp.png", pe.im)  
     cv2.imshow("Art", pe.im)
     cv2.waitKey(0)             
 
 
   
 if __name__ == '__main__':   
-    #test_tree_visit("E:/git/suCAM/python/images/slice-1.png")
-    #test_region_contour("E:/git/suCAM/python/images/slice-1.png")
-    test_fill_with_iso_contour("E:/git/suCAM/python/images/slice-1.png")
-    #test_segment_contours_in_region("E:/git/mydoc/Code/Python/gen_path/data/sample.png")
-    #test_segment_contours_in_region("E:/git/suCAM/python/images/slice-1.png")
+    test_tree_visit("/home/w/Desktop/aaa.png")
+    test_region_contour("/home/w/Desktop/aaa.png")
+    test_fill_with_iso_contour("/home/w/Desktop/aaa.png")
     

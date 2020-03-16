@@ -426,14 +426,23 @@ def test_filling_with_continues_spiral(filepath, offset = -14, reverseImage = Tr
 def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
     pe = pathengine.pathEngine()
 
-    line_width = 1#abs(offset) 
+    line_width = 1 #abs(offset) 
     
     def fill_spiral_in_connected_region(boundary):
         print("Region {}: has {} boundry contours.".format(iB, len(boundary)) )
         iso_contours = pe.fill_closed_region_with_iso_contours(boundary, offset)
+
         # init contour graph for iso contour by a distance relationaship matrix  
         iso_contours_2D, graph = pe.init_isocontour_graph(iso_contours)     
         graph.to_Mathematica("")
+
+        # draw iso contours for test
+        im = pe.im
+        for ic_1 in iso_contours_2D[:-1]:
+            contour = np.array(ic_1)
+            pathengine.suPath2D.draw_line(contour, im, [0,0,255],2)
+        cv2.imshow("iso_contours_2d", im)
+        cv2.waitKey(0)
 
         if not graph.is_connected():
             print("not connected")
@@ -441,6 +450,14 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
             if(ret):
                 print("re-connect...")
                 graph.to_Mathematica("")
+
+        # # draw iso contours for test
+        # for ic_1 in iso_contours[:-1]:
+        #     for ic_2 in ic_1:
+        #         contour = np.array(ic_2)
+        #         pathengine.suPath2D.draw_line(contour, pe.im, [255,0,0],1)
+        # cv2.imshow("iso_contours", pe.im)
+        # cv2.waitKey(0)
 
         # generate a minimum-weight spanning tree
         graph.to_reverse_delete_MST()
@@ -450,9 +467,10 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
         pocket_graph.to_Mathematica("")
         # generate spiral for each pockets
         # deep first search
+
         spirals = {}
-        pe.dfs_connect_path_from_bottom(0, pocket_graph.nodes, iso_contours_2D, spirals, offset) 
-        
+        pe.dfs_connect_path_from_bottom(0, pocket_graph.nodes, iso_contours_2D, spirals, offset)        
+
         return spirals[0]
     
     #1.find contours from slice
@@ -465,8 +483,8 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
     #2.filling each connected region   
     iB = 0
     for boundary in group_boundary.values():
-        if (len(boundary) <= 2):
-            continue
+        # if (len(boundary) <= 2):
+            # continue
         spiral = fill_spiral_in_connected_region(boundary)
         pathengine.suPath2D.draw_line(spiral, pe.im, [100,255,100],line_width)
         # start & end point 
@@ -522,4 +540,4 @@ if __name__ == '__main__':
     # test_segment_contours_in_region("/home/w/Desktop/pre_pro_1.png", -20, True)
     # test_pocket_spiral("/home/w/Desktop/pre_pro_1.png", -20, True)
     # test_filling_with_continues_spiral("/home/w/Desktop/pre_pro_1.png", -30, True)
-    test_fill_from_CSS("/home/w/Desktop/pre_pro.png", -10, True)
+    test_fill_from_CSS("/home/w/Desktop/pre_pro.png", -20, True)

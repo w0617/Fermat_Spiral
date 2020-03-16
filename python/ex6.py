@@ -292,5 +292,5 @@ if __name__ == "__main__":
     m = modelInfo.ModelInfo(ms)
     m.path = file_path
     
-    path = gen_continous_path(m, "r:/images", N, 3)
+    path = gen_continous_path(m, "/home/w/Desktop/", N, 3)
     print(path.shape)

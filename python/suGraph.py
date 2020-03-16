@@ -33,7 +33,7 @@ class suGraph():
         self.nodes.clear()
         for i in range(len(matrix)):
             node = suNode()
-            ids = np.argwhere(matrix[i] == 1)           
+            ids = np.argwhere(matrix[i] == 1)  
             node.next += list(ids.reshape(len(ids)) )
             ids = np.argwhere(matrix.T[i] == 1)
             node.pre += list(ids.reshape(len(ids)) )
