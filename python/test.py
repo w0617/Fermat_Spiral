@@ -484,8 +484,8 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
     #2.filling each connected region   
     iB = 0
     for boundary in group_boundary.values():
-        # if (len(boundary) <= 2):
-            # continue
+        if (len(boundary) <= 2):
+            continue
         spiral = fill_spiral_in_connected_region(boundary)
         pathengine.suPath2D.draw_line(spiral, pe.im, [100,255,100],line_width)
         # start & end point 

@@ -329,7 +329,7 @@ class pathEngine:
         # im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel, iterations=2)
         # shrink = cv2.resize(im, (1024,1024), interpolation=cv2.INTER_AREA)
         # cv2.imshow("pre-processing", shrink)
-        # cv2.imwrite("/home/w/Desktop/pre_pro.png", 255 - im)
+        # # cv2.imwrite("/home/w/Desktop/pre_pro.png", 255 - im)
         
         # cv2.waitKey(0)
 
@@ -538,10 +538,10 @@ class pathEngine:
             contours = pco.Execute(offset)  
             contours_filed = []  
             for cs in contours:
-                print(len(cs))
+                # print(len(cs))
                 if len(cs) > 10:    
                     contours_filed.append(cs)
-            print("contours filed:",len(contours_filed))
+            # print("contours filed:",len(contours_filed))
             if (len(contours_filed) > 0):
                 iso_contours_of_a_region.append( contours_filed)
         return iso_contours_of_a_region
@@ -865,8 +865,8 @@ class pathEngine:
         return np.asarray(fc)  
     def dfs_connect_path_from_bottom(self, i, nodes, iso_contours_2D, spirals, offset):
         node = nodes[i]  
-        msg = '{} make spiral {}'.format(i+1, np.asarray(node.data) + 1)
-        print(msg)  
+        # msg = '{} make spiral {}'.format(i+1, np.asarray(node.data) + 1)
+        # print(msg)  
         cs = []
         for ii in node.data:
             cs.append(iso_contours_2D[ii])
