@@ -481,16 +481,39 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
     group_boundary = pe.get_contours_from_each_connected_region(contour_tree, '0')    
 
     pe.im = cv2.cvtColor(pe.im, cv2.COLOR_GRAY2BGR)
+    sm_im = pe.im.copy()
+    pe_cov_im = pe.im.copy()
+    sm_cov_im = pe.im.copy()
     #2.filling each connected region   
     iB = 0
     for boundary in group_boundary.values():
         if (len(boundary) <= 2):
             continue
         spiral = fill_spiral_in_connected_region(boundary)
-        pathengine.suPath2D.draw_line(spiral, pe.im, [100,255,100],line_width)
-        # start & end point 
+        
+        pathengine.suPath2D.draw_line(spiral, pe.im, [100,255,100], line_width)
+        pathengine.suPath2D.draw_line(spiral, pe_cov_im, [100,255,100], abs(offset))
         cv2.circle(pe.im, tuple(spiral[-1].astype(int)), abs(offset), (255,0,0), -1)
         cv2.circle(pe.im, tuple(spiral[0].astype(int)), abs(offset), (0,0,255), -1)
+
+        # Resample a curve by Roy's method
+        spiral_smooth = pathengine.suPath2D.resample_curve_by_equal_dist(spiral, abs(offset))
+
+        # # Savitzky-Golay smoother
+        inter_size = int(abs(offset/3))
+        if inter_size % 2 == 0:
+            inter_size += 1
+        poly_order = 3
+        spiral_smooth = pe.smooth_curve_by_savgol(spiral_smooth, inter_size, poly_order)
+
+        # Smooth by affine transforms
+        # spiral_smooth, _, _, _, _ = css.smooth_curve(spiral_smooth, 2)
+        
+        pathengine.suPath2D.draw_line(spiral_smooth, sm_im, [100,255,100], line_width)
+        pathengine.suPath2D.draw_line(spiral_smooth, sm_cov_im, [100,255,100], abs(offset))
+        cv2.circle(sm_im, tuple(spiral_smooth[-1].astype(int)), abs(offset), (255,0,0), -1)
+        cv2.circle(sm_im, tuple(spiral_smooth[0].astype(int)), abs(offset), (0,0,255), -1)
+        
 
         # test boundary
         # print(len(boundary))
@@ -540,9 +563,20 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
         #     pathengine.suPath2D.draw_line(l, pe.im, [0,0,255],line_width)
         ##test                                
 
+    name_head = "../cpp_"
+    origin_im_name = name_head + str(abs(offset) * 3) + "cm.png"
+    smooth_im_name = name_head + "smooth_" + str(abs(offset) * 3) + "cm.png"
+    origin_cov_im_name = name_head + "cov_" + str(abs(offset) * 3) + "cm.png"
+    smooth_cov_im_name = name_head + "cov_smooth_" + str(abs(offset) * 3) + "cm.png"
+    cv2.imwrite(origin_im_name, pe.im)
+    cv2.imwrite(smooth_im_name, sm_im)
+    cv2.imwrite(origin_cov_im_name, pe_cov_im)
+    cv2.imwrite(smooth_cov_im_name, sm_cov_im)
+
     resizeImg = cv2.resize(pe.im, (1000,1000))
-    cv2.imshow("Art", resizeImg)
-    # cv2.imshow("Result", pe.im)
+    cv2.imshow("Origin", resizeImg)
+    resizeImg = cv2.resize(sm_im, (1000,1000))
+    cv2.imshow("Smooth", resizeImg)
     cv2.waitKey(0)   
     
 if __name__ == '__main__':  
