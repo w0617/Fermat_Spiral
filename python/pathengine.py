@@ -535,8 +535,15 @@ class pathEngine:
 
             pco = pyclipper.PyclipperOffset()
             pco.AddPaths(contours, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
-            contours = pco.Execute(offset)           
-            iso_contours_of_a_region.append( contours)
+            contours = pco.Execute(offset)  
+            contours_filed = []  
+            for cs in contours:
+                print(len(cs))
+                if len(cs) > 10:    
+                    contours_filed.append(cs)
+            print("contours filed:",len(contours_filed))
+            if (len(contours_filed) > 0):
+                iso_contours_of_a_region.append( contours_filed)
         return iso_contours_of_a_region
 
     def find_nearest_point_idx(self, point, contour):
@@ -657,7 +664,7 @@ class pathEngine:
             for j in range(len(iso_contours[i])):
                 # resample && convert to np.array                
                 iso_contours[i][j] = suPath2D.resample_curve_by_equal_dist(iso_contours[i][j], inter_size) 
-                iso_contours_2D.append(iso_contours[i][j])               
+                iso_contours_2D.append(iso_contours[i][j])  
                 num_contours += 1       
         print("num of contours: ", num_contours)
         
@@ -677,7 +684,7 @@ class pathEngine:
                     if (R[c1_id][c2_id] != 1):
                         dist = scid.cdist(c1, c2, 'euclidean')
                         min_dist = np.min(dist)
-                        if(min_dist < (i+1.5)*abs(self.offset)):
+                        if(min_dist < (i+1)*abs(self.offset)):
                             R[c1_id][c2_id] = 1
 
                     j2 += 1
