@@ -500,9 +500,11 @@ def test_fill_from_CSS(filepath, offset, is_reverse_img=True):
         spiral_smooth = pathengine.suPath2D.resample_curve_by_equal_dist(spiral, abs(offset))
 
         # # Savitzky-Golay smoother
-        inter_size = int(abs(offset/3))
+        inter_size = int(abs(offset))
         if inter_size % 2 == 0:
             inter_size += 1
+        if inter_size < 5:
+            inter_size = 5
         poly_order = 3
         spiral_smooth = pe.smooth_curve_by_savgol(spiral_smooth, inter_size, poly_order)
 
@@ -583,4 +585,4 @@ if __name__ == '__main__':
     # test_segment_contours_in_region("../pre_pro.png", -20, True)
     # test_pocket_spiral("../pre_pro.png", -20, True)
     # test_filling_with_continues_spiral("../pre_pro.png", -30, True)
-    test_fill_from_CSS("../pre_pro.png", -20, True)
+    test_fill_from_CSS("../pre_pro.png", -10, True)
